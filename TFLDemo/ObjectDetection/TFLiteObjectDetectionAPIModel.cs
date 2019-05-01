@@ -27,18 +27,37 @@ namespace TFLDemo.ObjectDetection
         // Pre-allocated buffers.
         private List<string> labels = new List<string>();
         private int[] intValues;
-        // outputLocations: array of shape [Batchsize, NUM_DETECTIONS,4]
-        // contains the location of detected boxes
-        private float[][][] outputLocations;
-        // outputClasses: array of shape [Batchsize, NUM_DETECTIONS]
-        // contains the classes of detected boxes
-        private float[][] outputClasses;
-        // outputScores: array of shape [Batchsize, NUM_DETECTIONS]
-        // contains the scores of detected boxes
-        private float[][] outputScores;
+
         // numDetections: array of shape [Batchsize]
         // contains the number of detected boxes
         private float[] numDetections;
+
+        // outputLocations: array of shape [Batchsize, NUM_DETECTIONS,4]
+        // contains the location of detected boxes
+        private float[][][] outputLocations;
+        public Java.Lang.Object OutputLocations
+        {
+            get => Java.Lang.Object.FromArray(outputLocations);
+            set => outputLocations = value.ToArray<float[][]>();
+        }
+
+        // outputClasses: array of shape [Batchsize, NUM_DETECTIONS]
+        // contains the classes of detected boxes
+        private float[][] outputClasses;
+        public Java.Lang.Object OutputClasses
+        {
+            get => Java.Lang.Object.FromArray(outputClasses);
+            set => outputClasses = value.ToArray<float[]>();
+        }
+
+        // outputScores: array of shape [Batchsize, NUM_DETECTIONS]
+        // contains the scores of detected boxes
+        private float[][] outputScores;
+        public Java.Lang.Object OutputScores
+        {
+            get => Java.Lang.Object.FromArray(outputScores);
+            set => outputScores = value.ToArray<float[]>();
+        }
 
         private ByteBuffer imgData;
 
@@ -185,13 +204,16 @@ namespace TFLDemo.ObjectDetection
             outputScores = CreateJagged(1, NUM_DETECTIONS);
             numDetections = new float[1];
 
+            var mOutputLocations= OutputLocations;
+            var mOutputClasses= OutputClasses;
+            var mOutputScores= OutputScores;
 
             Java.Lang.Object[] inputArray = { imgData };
 
             var outputMap = new Dictionary<Java.Lang.Integer, Java.Lang.Object>();
-            outputMap.Add(new Java.Lang.Integer(0), outputLocations);
-            outputMap.Add(new Java.Lang.Integer(1), outputClasses);
-            outputMap.Add(new Java.Lang.Integer(2), outputScores);
+            outputMap.Add(new Java.Lang.Integer(0), mOutputLocations);
+            outputMap.Add(new Java.Lang.Integer(1), mOutputClasses);
+            outputMap.Add(new Java.Lang.Integer(2), mOutputScores);
             outputMap.Add(new Java.Lang.Integer(3), numDetections);
             Trace.EndSection();
 
@@ -199,6 +221,10 @@ namespace TFLDemo.ObjectDetection
             Trace.BeginSection("run");
             tfLite.RunForMultipleInputsOutputs(inputArray, outputMap);
             Trace.EndSection();
+
+            OutputLocations = mOutputLocations;
+            OutputClasses = mOutputClasses;
+            OutputScores = mOutputScores;
 
             // Show the best detections.
             // after scaling them back to the input size.
